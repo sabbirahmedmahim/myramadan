@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+
+:root {
+    --bg-gradient: radial-gradient(circle at top, #0f2027, #081418, #16313c);
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --text-main: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.7);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --btn-bg: #94f1da;
+    --btn-hover: #45a049;
+    --btn-text: #081418;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    line-height: 1.8;
+}
+
+h1 {
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: clamp(18px, 3vw, 24px);
+}
+
+p {
+    font-size: clamp(14px, 2.5vw, 17px);
+}
+
+small {
+    opacity: 0.6;
+}
+
+header {
+    text-align: center;
+    padding: 40px 15px 20px;
+}
+
+#today-date {
+    color: var(--text-muted);
+    font-size: clamp(14px, 2vw, 16px);
+}
+
+.card {
+    width: 95%;
+    max-width: 750px;
+    margin: 20px auto;
+    padding: clamp(15px, 3vw, 30px);
+    border-radius: 16px;
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+#prayer-times div,
+#iftar-suhoor div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: clamp(14px, 2.5vw, 18px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+#prayer-times div:last-child,
+#iftar-suhoor div:last-child {
+    border-bottom: none;
+}
+
+select {
+    margin-top: 15px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+}
+
+.download-btn {
+    display: block;
+    width: fit-content;
+    margin: 20px auto 0;
+    padding: 12px 24px;
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+    background-color: var(--btn-hover);
+    color: var(--text-main);
+}
+
+@media (max-width: 500px) {
+    .card {
+        border-radius: 12px;
+    }
+
+    #prayer-times div,
+    #iftar-suhoor div {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+}
+footer {
+    text-align: center;
+    padding: 30px 15px;
+    margin-top: 20px;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+footer a {
+    color: var(--btn-bg); 
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: var(--btn-hover); 
+    text-decoration: underline;
+}
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header-img {
+    width: 100%;
+    max-width: 600px;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 15px auto;
+    border-radius: 16px; 
+    
+    background: transparent; 
+    
+    animation: fadeInDown 2s ease-out forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
