@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     function fetchTimings(city, lat, lon) {
         let url = city 
-            ? `https://api.aladhan.com/v1/timingsByCity?city=${city}&country=Bangladesh&method=2`
-            : `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=2`;
+             ? `https://api.aladhan.com/v1/timingsByCity?city=${city}&country=Bangladesh&method=1&school=1`
+            : `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=1&school=1`;
 
         fetch(url)
             .then(res => res.json())
@@ -31,4 +31,5 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         fetchTimings("Dhaka");
     }
+
 });
