@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let timingsData = null; 
+    let timingsData = null;
+    let lastNotifiedTime = "";
 
     const notifyBtn = document.getElementById("notify-btn");
     
@@ -32,38 +33,47 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!timingsData) return;
 
         const now = new Date();
-        if (now.getSeconds() === 0) {
-            let currentHour = now.getHours().toString().padStart(2, '0');
-            let currentMin = now.getMinutes().toString().padStart(2, '0');
-            let currentTimeString = `${currentHour}:${currentMin}`;
+        let currentHour = now.getHours().toString().padStart(2, '0');
+        let currentMin = now.getMinutes().toString().padStart(2, '0');
+        let currentTimeString = `${currentHour}:${currentMin}`;
 
-            const prayers = [
-                { name: "Suhoor Ends", time: timingsData.Fajr },
-                { name: "Iftar", time: timingsData.Maghrib },
-                { name: "Dhuhr", time: timingsData.Dhuhr },
-                { name: "Asr", time: timingsData.Asr },
-                { name: "Isha", time: timingsData.Isha }
-            ];
+        if (currentTimeString === lastNotifiedTime) return;
 
-            prayers.forEach(prayer => {
-                let [h, m] = prayer.time.split(':').map(Number);
-                let targetDate = new Date();
-                targetDate.setHours(h, m - 10, 0, 0);
-                
-                let notifyHour = targetDate.getHours().toString().padStart(2, '0');
-                let notifyMin = targetDate.getMinutes().toString().padStart(2, '0');
-                let notifyString = `${notifyHour}:${notifyMin}`;
+        let notificationSent = false;
 
-                if (currentTimeString === notifyString) {
-                    sendNotification("Get Ready! ⏳", `${prayer.name} is in 10 minutes.`);
-                }
+        const prayers = [
+            { name: "Suhoor Ends", time: timingsData.Fajr },
+            { name: "Iftar", time: timingsData.Maghrib },
+            { name: "Dhuhr", time: timingsData.Dhuhr },
+            { name: "Asr", time: timingsData.Asr },
+            { name: "Isha", time: timingsData.Isha }
+        ];
 
-                if (currentTimeString === prayer.time) {
-                    sendNotification("It's Time 🕌", `It is now time for ${prayer.name}.`);
-                }
-            });
+        prayers.forEach(prayer => {
+            let [h, m] = prayer.time.split(':').map(Number);
+            let targetDate = new Date();
+            targetDate.setHours(h, m - 10, 0, 0);
+            
+            let notifyHour = targetDate.getHours().toString().padStart(2, '0');
+            let notifyMin = targetDate.getMinutes().toString().padStart(2, '0');
+            let notifyString = `${notifyHour}:${notifyMin}`;
+
+            if (currentTimeString === notifyString) {
+                sendNotification("Get Ready! ⏳", `${prayer.name} is in 10 minutes.`);
+                notificationSent = true;
+            }
+
+            if (currentTimeString === prayer.time) {
+                sendNotification("It's Time 🕌", `It is now time for ${prayer.name}.`);
+                notificationSent = true;
+            }
+        });
+
+        if (notificationSent) {
+            lastNotifiedTime = currentTimeString;
         }
-    }, 1000);
+        
+    }, 10000); 
 
     function fetchTimings(city, lat, lon) {
         let tune = "&tune=0,0,0,2,0,0,0,0,0"; 
