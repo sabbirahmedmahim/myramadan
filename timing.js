@@ -5,7 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const notifyBtn = document.getElementById("notify-btn");
     
     if (Notification.permission === "granted") {
-        if(notifyBtn) notifyBtn.style.display = "none";
+        if(notifyBtn) {
+            notifyBtn.innerText = "Notifications Active";
+            notifyBtn.style.cursor = "default";
+        }
     }
 
     if (notifyBtn) {
@@ -16,7 +19,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         new Notification("Notifications Enabled! 🌙", { 
                             body: "You will now be alerted 10 minutes before prayers." 
                         });
-                        notifyBtn.style.display = "none";
+                        notifyBtn.innerText = "Notifications Active";
+                        notifyBtn.style.cursor = "default";
+                    } else if (permission === "denied") {
+                        alert("Please allow notifications in your browser settings to get alerts.");
                     }
                 });
             }
