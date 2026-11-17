@@ -1,4 +1,3 @@
-// Minimal service worker: lets notifications work on Android Chrome and handles taps.
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("notificationclick", e => {
