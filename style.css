@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri&family=Poppins:wght@300;500;700&display=swap');
 
 :root {
     --bg-gradient: radial-gradient(circle at top, #0f2027, #081418, #16313c);
@@ -44,14 +44,26 @@ small {
     opacity: 0.6;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 header {
     text-align: center;
     padding: 40px 15px 20px;
 }
 
-#today-date {
+#today-date,
+#hijri-date {
     color: var(--text-muted);
     font-size: clamp(14px, 2vw, 16px);
+}
+
+#countdown {
+    color: var(--btn-bg);
+    font-weight: 500;
+    font-size: clamp(14px, 2.2vw, 17px);
+    margin-top: 6px;
 }
 
 .card {
@@ -64,6 +76,7 @@ header {
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     transition: transform 0.3s ease;
+    text-align: center; /* replaces the deprecated <center> wrapper */
 }
 
 .card:hover {
@@ -110,6 +123,12 @@ select {
 .download-btn:hover {
     background-color: var(--btn-hover);
     color: var(--text-main);
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--btn-bg);
+    outline-offset: 3px;
 }
 
 @media (max-width: 500px) {
@@ -169,19 +188,15 @@ footer a:hover {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .notify-btn {
-    
     background: #94f1da;  
     color: #1a1a1a;       
-    border: black;
+    border: none;
     border-radius: 9px;  
     font-weight: 600;
     cursor: pointer;
-    
-    
+    font-family: inherit;
     padding: 8px 16px;   
     font-size: 0.9rem;   
-    
-    
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: block;
     margin: 10px auto;   
@@ -190,4 +205,9 @@ footer a:hover {
 .notify-btn:hover {
     transform: scale(1.05); 
     box-shadow: 0 0 15px rgba(148, 241, 218, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .header-img { animation: none; }
+    .card, .notify-btn { transition: none; }
 }
