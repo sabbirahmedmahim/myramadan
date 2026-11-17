@@ -2,70 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="myRamadan - local Suhoor, Iftar and prayer times, notifications and a daily Ayah.">
+    <meta name="theme-color" content="#081418">
     <title>myRamadan</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
-    <script src="main.js"></script>
-    <script src="timing.js"></script>
-    <script src="hadith.js"></script>
+    <script src="main.js" defer></script>
+    <script src="timing.js" defer></script>
+    <script src="hadith.js" defer></script>
     <meta name="google-site-verification" content="f1dA2MEtBTUZYHxSc0uM15IGxTStzlSQ5SsJqSctT_s" />
 </head>
 <body>
 
     <header>
-    <a href="https://linktr.ee/sabbirahmedmahim" target="_blank" rel="noopener noreferrer">
-        <img src="header-banner.png" alt="Ramadan Kareem" class="header-img">
-    </a>
-    
-    <div id="today-date"></div>
-</header>
+        <a href="https://linktr.ee/sabbirahmedmahim" target="_blank" rel="noopener noreferrer">
+            <img src="header-banner.png" alt="Ramadan Kareem" class="header-img">
+        </a>
+        <div id="today-date"></div>
+        <div id="hijri-date"></div>
+        <div id="countdown" aria-live="off"></div>
+    </header>
 
-    <center><section class="card">
-        <h2>Suhoor & Iftar</h2>
-        <div id="iftar-suhoor"></div>
-    </section></center>
+    <main>
+        <section class="card">
+            <h2>Suhoor & Iftar</h2>
+            <div id="iftar-suhoor" aria-live="polite">Loading...</div>
+        </section>
 
-    <center><section class="card">
-        <h2>Prayer Times</h2>
-        <div id="prayer-times"></div>
-    </section></center>
+        <section class="card">
+            <h2>Prayer Times</h2>
+            <div id="prayer-times" aria-live="polite">Loading...</div>
+            <small id="location-note"></small>
+        </section>
 
-    <center><section class="card">
-        <h2>Niyat of Roza</h2>
-        <p>
-            نَوَيْتُ أَنْ أَصُومَ غَدًا مِنْ شَهْرِ رَمَضَانَ
-            <br><br>
-            "O Allah, I intend to fast the entire blessed month of Ramadan, believing in You and relying on Your Mercy"
-        </p>
-    </section></center>
+        <section class="card">
+            <h2>Niyat of Roza</h2>
+            <p>
+                <span lang="ar" dir="rtl">نَوَيْتُ أَنْ أَصُومَ غَدًا مِنْ شَهْرِ رَمَضَانَ</span>
+                <br><br>
+                "O Allah, I intend to fast the entire blessed month of Ramadan, believing in You and relying on Your Mercy"
+            </p>
+        </section>
 
-    <center><section class="card">
-        <h2>Iftar Dua</h2>
-        <p>
-            اَللّٰهُمَّ اِنِّى لَكَ صُمْتُ وَبِكَ اٰمَنْتُ وَعَلَيْكَ تَوَكَّلْتُ وَعَلٰى رِزْقِكَ اَفْطَرْتُ
-            <br><br>
-            "O Allah! I fasted for You and I believe in You and I break my fast with Your sustenance"
-        </p>
-    </section></center>
+        <section class="card">
+            <h2>Iftar Dua</h2>
+            <p>
+                <span lang="ar" dir="rtl">اَللّٰهُمَّ اِنِّى لَكَ صُمْتُ وَبِكَ اٰمَنْتُ وَعَلَيْكَ تَوَكَّلْتُ وَعَلٰى رِزْقِكَ اَفْطَرْتُ</span>
+                <br><br>
+                "O Allah! I fasted for You and I believe in You and I break my fast with Your sustenance"
+            </p>
+        </section>
 
-    <center><section class="card">
-        <h2>Ayaah of the Day</h2>
-        <div id="hadith-container"></div>
-    </section></center>
+        <section class="card">
+            <h2>Ayaah of the Day</h2>
+            <div id="hadith-container" aria-live="polite"></div>
+        </section>
+    </main>
 
     <a href="ramadan-journal.pdf" download="My_Ramadan_Journal_2026.pdf" class="download-btn">
-    Download Ramadan Journal
-</a> <br>
-<button id="notify-btn" class="notify-btn">
-    Enable Prayer Notification            
-</button>
+        Download Ramadan Journal
+    </a>
+    <button id="notify-btn" class="notify-btn" type="button">
+        Enable Prayer Notification
+    </button>
+
     <footer>
-    <p>Developed by <a href="https://linktr.ee/sabbirahmedmahim" target="_blank" rel="noopener noreferrer">SABBIR AHMED MAHIM</a></p>
-</footer>
+        <p>Developed by <a href="https://linktr.ee/sabbirahmedmahim" target="_blank" rel="noopener noreferrer">SABBIR AHMED MAHIM</a></p>
+    </footer>
 
-    
-
+    <noscript><p style="text-align:center;padding:20px;">Please enable JavaScript to see prayer times.</p></noscript>
 </body>
 </html>
-
-
