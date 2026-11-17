@@ -1,120 +1,211 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let timingsData = null;
-    let lastNotifiedTime = "";
+    "use strict";
 
-    const notifyBtn = document.getElementById("notify-btn");
-    
-    if (Notification.permission === "granted") {
-        if(notifyBtn) {
-            notifyBtn.innerText = "Notifications Active";
-            notifyBtn.style.cursor = "default";
+    const $ = id => document.getElementById(id);
+    const pad = n => String(n).padStart(2, "0");
+    const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const hasNotif = "Notification" in window; // missing on iOS Safari (non-PWA): old code crashed here
+    const PRE = 10 * 60000, GRACE = 5 * 60000;
+
+    const store = {
+        get(k) { try { return JSON.parse(localStorage.getItem("myramadan:" + k)); } catch { return null; } },
+        set(k, v) { try { localStorage.setItem("myramadan:" + k, JSON.stringify(v)); } catch { /* storage unavailable */ } }
+    };
+
+    let timings = null, loadedDay = "", busy = false, swReg = null;
+
+    /* ---------- Notifications ---------- */
+    const btn = $("notify-btn");
+
+    function syncBtn() {
+        if (!btn) return;
+        if (!hasNotif) { btn.hidden = true; return; }
+        if (Notification.permission === "granted") {
+            btn.textContent = "Notifications Active";
+            btn.style.cursor = "default";
+        } else if (Notification.permission === "denied") {
+            btn.textContent = "Notifications Blocked (allow in browser settings)";
         }
     }
 
-    if (notifyBtn) {
-        notifyBtn.addEventListener("click", () => {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        new Notification("Notifications Enabled! 🌙", { 
-                            body: "You will now be alerted 10 minutes before prayers." 
-                        });
-                        notifyBtn.innerText = "Notifications Active";
-                        notifyBtn.style.cursor = "default";
-                    } else if (permission === "denied") {
-                        alert("Please allow notifications in your browser settings to get alerts.");
-                    }
-                });
-            }
+    function show(title, body, tag) {
+        if (!hasNotif || Notification.permission !== "granted") return;
+        const opts = { body, tag, icon: "favicon.png" };
+        const fallback = () => { try { new Notification(title, opts); } catch { /* unsupported */ } };
+        // Service worker path is required for notifications on Android Chrome
+        if (swReg) Promise.resolve(swReg.showNotification(title, opts)).catch(fallback);
+        else fallback();
+    }
+
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js")
+            .then(() => navigator.serviceWorker.ready)
+            .then(reg => { swReg = reg; })
+            .catch(() => { /* falls back to new Notification() */ });
+    }
+
+    if (btn) {
+        btn.addEventListener("click", async () => {
+            if (!hasNotif || Notification.permission === "granted") return;
+            try {
+                const p = await Notification.requestPermission();
+                if (p === "granted") show("Notifications Enabled! 🌙", "You will now be alerted 10 minutes before prayers.", "enabled");
+                else if (p === "denied") alert("Please allow notifications in your browser settings to get alerts.");
+            } catch { /* ignore */ }
+            syncBtn();
         });
     }
 
-    function sendNotification(title, body) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(title, { body: body });
-        }
+    /* ---------- Time helpers ---------- */
+    // Accepts "HH:MM" or "HH:MM (BST)"
+    function at(str) {
+        const m = /(\d{1,2}):(\d{2})/.exec(str || "");
+        if (!m) return null;
+        const d = new Date();
+        d.setHours(+m[1], +m[2], 0, 0);
+        return d;
+    }
+    const fmt = s => { const m = /(\d{1,2}):(\d{2})/.exec(s || ""); return m ? `${pad(+m[1])}:${m[2]}` : "--:--"; };
+
+    function events() {
+        if (!timings) return [];
+        return [
+            ["fajr", "Suhoor Ends", timings.Fajr],
+            ["dhuhr", "Dhuhr", timings.Dhuhr],
+            ["asr", "Asr", timings.Asr],
+            ["maghrib", "Iftar", timings.Maghrib],
+            ["isha", "Isha", timings.Isha]
+        ].map(([id, name, t]) => ({ id, name, time: at(t) })).filter(e => e.time);
     }
 
-    setInterval(() => {
-        if (!timingsData) return;
+    /* Fires each trigger once per day. Uses "now >= trigger" with a grace window instead of
+       exact-minute matching, so throttled background timers no longer miss notifications,
+       and persists fired keys so reloads / multiple tabs don't duplicate them. */
+    function checkNotifications(now) {
+        const today = dayKey(now);
+        let fired = store.get("fired");
+        if (!fired || fired.day !== today) fired = { day: today, keys: [] };
+        let changed = false;
 
+        events().forEach(e => {
+            [["pre", new Date(e.time.getTime() - PRE)], ["at", e.time]].forEach(([kind, t]) => {
+                const key = e.id + kind, late = now - t;
+                if (late < 0 || late >= GRACE || fired.keys.includes(key)) return;
+                if (kind === "pre" && now >= e.time) return;
+                fired.keys.push(key);
+                changed = true;
+                if (kind === "pre") show("Get Ready! ⏳", `${e.name} is in 10 minutes.`, today + key);
+                else show("It's Time 🕌", `It is now time for ${e.name}.`, today + key);
+            });
+        });
+        if (changed) store.set("fired", fired);
+    }
+
+    function renderCountdown(now) {
+        const el = $("countdown");
+        if (!el || !timings) return;
+        const list = events();
+        let next = list.find(e => e.time > now), approx = "";
+        if (!next && list.length) { // after Isha: tomorrow's Suhoor (approximate)
+            next = { name: list[0].name, time: new Date(list[0].time.getTime() + 864e5) };
+            approx = "~";
+        }
+        if (!next) return;
+        const s = Math.max(0, Math.round((next.time - now) / 1000));
+        el.textContent = `${next.name} in ${approx}${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`;
+    }
+
+    function tick() {
         const now = new Date();
-        let currentHour = now.getHours().toString().padStart(2, '0');
-        let currentMin = now.getMinutes().toString().padStart(2, '0');
-        let currentTimeString = `${currentHour}:${currentMin}`;
+        if (dayKey(now) !== loadedDay && !busy) load(); // new day: refresh timings
+        checkNotifications(now);
+        renderCountdown(now);
+    }
 
-        if (currentTimeString === lastNotifiedTime) return;
+    /* ---------- Data ---------- */
+    function rows(id, list) {
+        $(id).replaceChildren(...list.map(([name, t]) => {
+            const d = document.createElement("div"), a = document.createElement("span"), b = document.createElement("span");
+            a.textContent = name;
+            b.textContent = fmt(t);
+            d.append(a, b);
+            return d;
+        }));
+    }
 
-        let notificationSent = false;
+    function apply(c, fallback) {
+        timings = c.t;
+        loadedDay = dayKey();
+        rows("iftar-suhoor", [["Suhoor Ends (Fajr)", c.t.Fajr], ["Iftar (Maghrib)", c.t.Maghrib]]);
+        rows("prayer-times", [["Fajr", c.t.Fajr], ["Dhuhr", c.t.Dhuhr], ["Asr", c.t.Asr], ["Maghrib", c.t.Maghrib], ["Isha", c.t.Isha]]);
+        const h = c.hijri;
+        if (h && $("hijri-date")) $("hijri-date").textContent = `${h.day} ${h.month.en} ${h.year} AH`;
+        if ($("location-note")) $("location-note").textContent = fallback ? "Location unavailable - showing Dhaka times." : "";
+    }
 
-        const prayers = [
-            { name: "Suhoor Ends", time: timingsData.Fajr },
-            { name: "Iftar", time: timingsData.Maghrib },
-            { name: "Dhuhr", time: timingsData.Dhuhr },
-            { name: "Asr", time: timingsData.Asr },
-            { name: "Isha", time: timingsData.Isha }
-        ];
+    function showError() {
+        const box = $("iftar-suhoor");
+        box.textContent = "Couldn't load timings. ";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "notify-btn";
+        b.textContent = "Try Again";
+        b.addEventListener("click", load);
+        box.append(b);
+        $("prayer-times").textContent = "";
+    }
 
-        prayers.forEach(prayer => {
-            let [h, m] = prayer.time.split(':').map(Number);
-            let targetDate = new Date();
-            targetDate.setHours(h, m - 10, 0, 0);
-            
-            let notifyHour = targetDate.getHours().toString().padStart(2, '0');
-            let notifyMin = targetDate.getMinutes().toString().padStart(2, '0');
-            let notifyString = `${notifyHour}:${notifyMin}`;
-
-            if (currentTimeString === notifyString) {
-                sendNotification("Get Ready! ⏳", `${prayer.name} is in 10 minutes.`);
-                notificationSent = true;
-            }
-
-            if (currentTimeString === prayer.time) {
-                sendNotification("It's Time 🕌", `It is now time for ${prayer.name}.`);
-                notificationSent = true;
-            }
+    function locate() {
+        return new Promise(resolve => {
+            const fb = { city: "Dhaka", id: "Dhaka", fallback: true };
+            if (!navigator.geolocation) return resolve(fb);
+            navigator.geolocation.getCurrentPosition(
+                p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude, id: `${p.coords.latitude.toFixed(2)},${p.coords.longitude.toFixed(2)}` }),
+                () => resolve(fb),
+                { timeout: 8000, maximumAge: 36e5 }
+            );
         });
-
-        if (notificationSent) {
-            lastNotifiedTime = currentTimeString;
-        }
-        
-    }, 10000); 
-
-    function fetchTimings(city, lat, lon) {
-        let tune = "&tune=0,0,0,2,0,0,0,0,0"; 
-        
-        let url = city 
-            ? `https://api.aladhan.com/v1/timingsByCity?city=${city}&country=Bangladesh&method=1&school=1${tune}`
-            : `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=1&school=1${tune}`;
-
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                timingsData = data.data.timings;
-                const t = data.data.timings;
-                
-                document.getElementById("iftar-suhoor").innerHTML = `
-                    <div><span>Suhoor Ends (Fajr)</span> <span>${t.Fajr}</span></div>
-                    <div><span>Iftar (Maghrib)</span> <span>${t.Maghrib}</span></div>
-                `;
-                document.getElementById("prayer-times").innerHTML = `
-                    <div><span>Fajr</span> <span>${t.Fajr}</span></div>
-                    <div><span>Dhuhr</span> <span>${t.Dhuhr}</span></div>
-                    <div><span>Asr</span> <span>${t.Asr}</span></div>
-                    <div><span>Maghrib</span> <span>${t.Maghrib}</span></div>
-                    <div><span>Isha</span> <span>${t.Isha}</span></div>
-                `;
-            })
-            .catch(error => console.error("Error fetching timings:", error));
     }
 
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => fetchTimings(null, pos.coords.latitude, pos.coords.longitude),
-            () => fetchTimings("Dhaka") 
-        );
-    } else {
-        fetchTimings("Dhaka");
+    async function fetchTimings(loc) {
+        const d = new Date(), date = `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+        const tune = "&tune=0,0,0,2,0,0,0,0,0"; // +2 min Dhuhr buffer (unchanged)
+        const url = loc.city
+            ? `https://api.aladhan.com/v1/timingsByCity/${date}?city=${encodeURIComponent(loc.city)}&country=Bangladesh&method=1&school=1${tune}`
+            : `https://api.aladhan.com/v1/timings/${date}?latitude=${loc.lat}&longitude=${loc.lon}&method=1&school=1${tune}`;
+        const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 10000);
+        try {
+            const res = await fetch(url, { signal: ctrl.signal });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const json = await res.json();
+            if (json.code !== 200 || !json.data || !json.data.timings) throw new Error("Bad response");
+            return json.data;
+        } finally { clearTimeout(timer); }
     }
+
+    async function load() {
+        busy = true;
+        loadedDay = dayKey(); // prevents retry loops on failure; button / next day retries
+        try {
+            const loc = await locate();
+            const key = `${dayKey()}|${loc.id}`;
+            let c = store.get("timings");
+            if (!c || c.key !== key) {
+                const data = await fetchTimings(loc);
+                c = { key, t: data.timings, hijri: data.date && data.date.hijri };
+                store.set("timings", c);
+            }
+            apply(c, loc.fallback);
+        } catch (err) {
+            console.error("Error fetching timings:", err);
+            const c = store.get("timings");
+            if (c && c.key.startsWith(dayKey())) apply(c);
+            else showError();
+        } finally { busy = false; }
+    }
+
+    syncBtn();
+    load();
+    setInterval(tick, 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
 });
